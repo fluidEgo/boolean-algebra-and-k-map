@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digital Logic Interactive Toolkit</title>
+    <title>Digital Logic Interactive Toolkit v4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -31,9 +31,8 @@
             user-select: none;
             transition: background-color 0.2s;
         }
-        .kmap-cell.selected {
-            background-color: #4f46e5;
-        }
+        .kmap-cell.one { background-color: #4f46e5; }
+        .kmap-cell.zero { background-color: #374151; }
         .kmap-header {
             display: flex;
             align-items: center;
@@ -51,19 +50,10 @@
             color: #d1d5db;
         }
         /* For webkit browsers */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #1f2937;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #4b5563;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #6b7280;
-        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1f2937; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
         details > summary {
             cursor: pointer;
             padding: 1rem;
@@ -71,12 +61,8 @@
             border-radius: 0.5rem;
             transition: background-color 0.2s;
         }
-        details > summary:hover {
-            background-color: #374151;
-        }
-        details[open] > summary {
-            background-color: #4f46e5;
-        }
+        details > summary:hover { background-color: #374151; }
+        details[open] > summary { background-color: #4f46e5; }
         details > div {
              background-color: #111827;
              padding: 1rem;
@@ -84,21 +70,32 @@
              border: 1px solid #374151;
              border-top: none;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            border: 1px solid #4b5563;
-            padding: 0.75rem;
-            text-align: center;
-        }
-        th {
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #4b5563; padding: 0.75rem; text-align: center; }
+        th { background-color: #374151; }
+        #truthTableResultContainer { max-height: 400px; overflow-y: auto; }
+        
+        /* Circuit Diagram Styles */
+        .gate-body { fill: #374151; stroke: #9ca3af; stroke-width: 2; }
+        .gate-text { font-family: monospace; fill: white; font-size: 14px; text-anchor: middle; }
+        .wire { stroke: #9ca3af; stroke-width: 2; fill: none; }
+        .input-label { font-family: sans-serif; fill: #d1d5db; font-size: 16px; font-weight: bold; }
+        
+        /* Quiz Styles */
+        .quiz-option {
             background-color: #374151;
+            border: 2px solid transparent;
+            transition: all 0.2s;
         }
-        #truthTableResultContainer {
-            max-height: 400px;
-            overflow-y: auto;
+        .quiz-option:hover { background-color: #4b5563; }
+        .quiz-option.correct { background-color: #166534; border-color: #22c55e; }
+        .quiz-option.incorrect { background-color: #991b1b; border-color: #ef4444; }
+        
+        /* Simplification Steps Style */
+        .step-title {
+            font-weight: 600;
+            color: #93c5fd; /* light blue */
+            margin-bottom: 0.25rem;
         }
     </style>
 </head>
@@ -106,34 +103,45 @@
 
     <div class="container mx-auto p-4 md:p-8">
         <header class="text-center mb-8">
-            <h1 class="text-4xl md:text-5xl font-bold text-white mb-2">Digital Logic Toolkit</h1>
-            <p class="text-lg text-gray-400">Your interactive guide to solving and learning boolean algebra.</p>
+            <h1 class="text-4xl md:text-5xl font-bold text-white mb-2">Digital Logic Toolkit v4</h1>
+            <p class="text-lg text-gray-400">Simplify, visualize, and learn boolean algebra with powerful interactive tools.</p>
         </header>
 
         <main>
             <!-- Tabs -->
-            <div class="mb-6 flex justify-center space-x-2 md:space-x-4 bg-gray-800 p-2 rounded-lg">
-                <button class="tab-button active flex-1 md:flex-none px-4 py-2 rounded-md font-semibold" onclick="showTab('toolkit')">Boolean Toolkit</button>
-                <button class="tab-button flex-1 md:flex-none px-4 py-2 rounded-md font-semibold" onclick="showTab('kmap')">K-Map Solver</button>
-                <button class="tab-button flex-1 md:flex-none px-4 py-2 rounded-md font-semibold" onclick="showTab('learn')">Learn Concepts</button>
+            <div class="mb-6 flex flex-wrap justify-center gap-2 bg-gray-800 p-2 rounded-lg">
+                <button class="tab-button active flex-1 md:flex-none px-4 py-2 rounded-md font-semibold" onclick="showTab('toolkit')">Toolkit</button>
+                <button class="tab-button flex-1 md:flex-none px-4 py-2 rounded-md font-semibold" onclick="showTab('circuit')">Circuit Diagram</button>
+                <button class="tab-button flex-1 md:flex-none px-4 py-2 rounded-md font-semibold" onclick="showTab('kmap')">K-Map</button>
+                <button class="tab-button flex-1 md:flex-none px-4 py-2 rounded-md font-semibold" onclick="showTab('learn')">Learn</button>
+                <button class="tab-button flex-1 md:flex-none px-4 py-2 rounded-md font-semibold" onclick="showTab('quiz')">Quiz</button>
             </div>
 
             <!-- Tab Content -->
             <div id="toolkit" class="tab-content">
                 <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
                     <h2 class="text-2xl font-semibold mb-4 text-white">Expression Analyzer</h2>
-                    <p class="mb-4 text-gray-400">Enter a boolean expression. Use `+` for OR, `*` for AND, and `'` for NOT. Use parentheses for grouping. E.g., `A*B' + (A+C)'`</p>
+                    <p class="mb-4 text-gray-400">Enter a boolean expression. Use `+` for OR, `*` for AND, and `'` for NOT. E.g., `(A+B)*(A'+B')`</p>
                     <input type="text" id="expressionInput" class="w-full bg-gray-700 border border-gray-600 rounded-md p-3 text-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Enter boolean expression...">
                     
-                    <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 mt-4">
-                        <button onclick="generateTruthTable()" class="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-md transition duration-300">Generate Truth Table</button>
-                        <button onclick="simplifyExpression()" class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-md transition duration-300">Simplify Expression</button>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <button onclick="generateTruthTable()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-md transition duration-300">Generate Truth Table</button>
+                        <div class="grid grid-cols-2 gap-4">
+                           <button onclick="simplifyExpression('SOP')" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-md transition duration-300">Simplify SOP</button>
+                           <button onclick="simplifyExpression('POS')" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-6 rounded-md transition duration-300">Simplify POS</button>
+                        </div>
                     </div>
 
                     <div id="simplificationResultContainer" class="mt-6 hidden">
-                        <h3 class="text-xl font-semibold mb-2">Simplified Expression (SOP)</h3>
+                        <h3 class="text-xl font-semibold mb-2">Simplified Expression (<span id="simp-type"></span>)</h3>
                         <div id="simplifiedExpressionResult" class="result-box"></div>
                     </div>
+
+                    <div id="simplificationStepsContainer" class="mt-6 hidden">
+                        <h3 class="text-xl font-semibold mb-2">Step-by-Step Simplification</h3>
+                        <div id="simplificationSteps" class="result-box text-sm space-y-3"></div>
+                    </div>
+
                     <div id="truthTableResultContainer" class="mt-6 hidden">
                         <h3 class="text-xl font-semibold mb-2">Truth Table</h3>
                         <div id="truthTableResult" class="overflow-x-auto"></div>
@@ -142,21 +150,57 @@
                 </div>
             </div>
 
-            <div id="kmap" class="tab-content hidden">
+            <div id="circuit" class="tab-content hidden">
                 <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <h2 class="text-2xl font-semibold mb-4 text-white">Logic Circuit Visualizer</h2>
+                    <p class="mb-4 text-gray-400">Enter an expression in the 'Toolkit' tab and select an implementation type to visualize it.</p>
+                    
+                    <div class="flex flex-wrap items-center justify-center gap-4 mb-6 bg-gray-700 p-3 rounded-lg">
+                        <span class="font-semibold text-gray-300">Implementation Type:</span>
+                        <div class="flex flex-wrap justify-center gap-x-4 gap-y-2">
+                            <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="circuit-type" value="standard" onchange="generateCircuitDiagram()" checked class="form-radio text-indigo-500"><span>Standard</span></label>
+                            <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="circuit-type" value="nand" onchange="generateCircuitDiagram()" class="form-radio text-indigo-500"><span>NAND Only</span></label>
+                            <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="circuit-type" value="nor" onchange="generateCircuitDiagram()" class="form-radio text-indigo-500"><span>NOR Only</span></label>
+                        </div>
+                    </div>
+
+                    <div id="circuit-container" class="bg-gray-900 p-4 rounded-lg overflow-x-auto min-h-[400px] flex items-center justify-center">
+                        <svg id="circuit-svg" width="800" height="400"></svg>
+                    </div>
+                    <div id="circuit-error" class="mt-4 text-amber-400 font-semibold hidden">Enter a valid expression in the Toolkit tab first.</div>
+                </div>
+            </div>
+            
+            <div id="kmap" class="tab-content hidden">
+                 <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
                     <h2 class="text-2xl font-semibold mb-4 text-white">Interactive K-Map Solver</h2>
-                     <div class="flex items-center space-x-6 mb-4">
-                        <span class="font-semibold text-gray-300">Number of Variables:</span>
-                        <div class="flex space-x-4">
-                            <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="kmap-vars" value="2" onchange="createKMap()" class="form-radio text-indigo-500"><span>2</span></label>
-                            <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="kmap-vars" value="3" onchange="createKMap()" class="form-radio text-indigo-500"><span>3</span></label>
-                            <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="kmap-vars" value="4" onchange="createKMap()" checked class="form-radio text-indigo-500"><span>4</span></label>
+                     <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+                        <div class="flex items-center space-x-4">
+                            <span class="font-semibold text-gray-300">Variables:</span>
+                            <div class="flex space-x-2">
+                                <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="kmap-vars" value="2" onchange="createKMap()" class="form-radio text-indigo-500"><span>2</span></label>
+                                <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="kmap-vars" value="3" onchange="createKMap()" class="form-radio text-indigo-500"><span>3</span></label>
+                                <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="kmap-vars" value="4" onchange="createKMap()" checked class="form-radio text-indigo-500"><span>4</span></label>
+                            </div>
+                        </div>
+                         <div class="flex items-center space-x-4">
+                            <span class="font-semibold text-gray-300">Mode:</span>
+                            <div class="flex space-x-2">
+                                <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="kmap-mode" value="SOP" onchange="solveInteractiveKMap()" checked class="form-radio text-green-500"><span>SOP (group 1s)</span></label>
+                                <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="kmap-mode" value="POS" onchange="solveInteractiveKMap()" class="form-radio text-teal-500"><span>POS (group 0s)</span></label>
+                            </div>
                         </div>
                     </div>
                     <div id="kmap-container" class="my-4 flex justify-center"></div>
-                    <div class="mt-6">
-                        <h3 class="text-xl font-semibold mb-2">Simplified Expression (SOP)</h3>
-                        <div id="kmapSimplifiedExpression" class="result-box"></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        <div>
+                            <h3 class="text-xl font-semibold mb-2">Simplified Expression (<span id="kmap-simp-type">SOP</span>)</h3>
+                            <div id="kmapSimplifiedExpression" class="result-box"></div>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold mb-2">Step-by-Step Grouping</h3>
+                            <div id="kmap-steps" class="result-box text-sm space-y-1"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -164,7 +208,6 @@
             <div id="learn" class="tab-content hidden">
                  <div class="bg-gray-800 p-6 rounded-lg shadow-lg space-y-4">
                     <h2 class="text-2xl font-semibold mb-2 text-white">Core Concepts Review</h2>
-                    
                     <details>
                         <summary class="font-semibold text-lg">Boolean Algebra & Postulates</summary>
                         <div class="prose prose-invert max-w-none">
@@ -178,175 +221,210 @@
                             <h4 class="font-semibold">Key Postulates:</h4>
                             <ul>
                                 <li>Commutative: `A+B = B+A`, `A*B = B*A`</li>
-                                <li>Associative: `(A+B)+C = A+(B+C)`, `(A*B)*C = A*(B*C)`</li>
-                                <li>Distributive: `A*(B+C) = A*B + A*C`, `A+(B*C) = (A+B)*(A+C)`</li>
+                                <li>Distributive: `A*(B+C) = A*B + A*C`</li>
                                 <li>Identity: `A+0 = A`, `A*1 = A`</li>
                                 <li>Complement: `A+A' = 1`, `A*A' = 0`</li>
                             </ul>
                         </div>
                     </details>
-
                     <details>
                         <summary class="font-semibold text-lg">De Morgan's Theorems</summary>
                         <div class="prose prose-invert max-w-none">
-                            <p>De Morgan's theorems are crucial for simplifying expressions and converting between AND/OR logic and NAND/NOR logic.</p>
+                             <p>De Morgan's theorems are crucial for simplifying expressions and converting between standard forms.</p>
                             <ol>
-                                <li><strong>Theorem 1:</strong> The complement of a product is the sum of the complements. `(A * B)' = A' + B'`</li>
-                                <li><strong>Theorem 2:</strong> The complement of a sum is the product of the complements. `(A + B)' = A' * B'`</li>
+                                <li><strong>Theorem 1:</strong> `(A * B)' = A' + B'` (Break the line, change the sign)</li>
+                                <li><strong>Theorem 2:</strong> `(A + B)' = A' * B'` (Break the line, change the sign)</li>
                             </ol>
-                            <p>This means you can "break the line and change the sign."</p>
                         </div>
                     </details>
-
-                     <details>
-                        <summary class="font-semibold text-lg">Logic Gates</summary>
-                        <div class="prose prose-invert max-w-none">
-                            <p>Logic gates are the physical building blocks of digital circuits, each implementing a boolean function.</p>
-                             <ul>
-                                <li><strong>AND/OR/NOT:</strong> The fundamental gates.</li>
-                                <li><strong>NAND:</strong> Universal gate (NOT-AND). Output is 0 only if all inputs are 1.</li>
-                                <li><strong>NOR:</strong> Universal gate (NOT-OR). Output is 1 only if all inputs are 0.</li>
-                                <li><strong>XOR (Exclusive OR):</strong> Output is 1 if inputs are different.</li>
-                                <li><strong>XNOR (Exclusive NOR):</strong> Output is 1 if inputs are the same.</li>
-                            </ul>
-                            <p>Any boolean expression can be implemented using only NAND gates or only NOR gates.</p>
-                        </div>
-                    </details>
-                    
                     <details>
-                        <summary class="font-semibold text-lg">Karnaugh Maps (K-Maps)</summary>
-                        <div class="prose prose-invert max-w-none">
-                            <p>A K-Map is a graphical method used to simplify boolean algebra expressions. It's a visual representation of a truth table.</p>
-                            <h4 class="font-semibold">How to Use:</h4>
-                            <ol>
-                                <li>Choose the map size based on the number of variables (2, 3, or 4).</li>
-                                <li>Fill the map with 1s and 0s from your function's truth table or minterms.</li>
-                                <li>Group adjacent 1s into the largest possible rectangular blocks whose size is a power of two (1, 2, 4, 8, 16). The map wraps around from top to bottom and left to right.</li>
-                                <li>Write a product term for each group by including only the variables that do not change within that group.</li>
-                                <li>The simplified expression is the sum (OR) of all the product terms from your groups.</li>
-                            </ol>
-                            <p>Our interactive K-Map Solver automates this process for you!</p>
-                        </div>
+                        <summary class="font-semibold text-lg">Sum-of-Products (SOP) vs Product-of-Sums (POS)</summary>
+                         <div class="prose prose-invert max-w-none">
+                            <p>Two standard ways to write boolean functions:</p>
+                             <ul>
+                                 <li><strong>SOP (Sum-of-Products):</strong> An OR of multiple AND terms. Example: `A'B + BC'`. Derived from the '1's in a truth table (minterms). Implemented with AND gates feeding into a single OR gate.</li>
+                                 <li><strong>POS (Product-of-Sums):</strong> An AND of multiple OR terms. Example: `(A+B') * (B'+C)`. Derived from the '0's in a truth table (maxterms). Implemented with OR gates feeding into a single AND gate.</li>
+                             </ul>
+                         </div>
                     </details>
-
                  </div>
+            </div>
+            
+            <div id="quiz" class="tab-content hidden">
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <h2 class="text-2xl font-semibold mb-4 text-white">Test Your Knowledge</h2>
+                    <div id="quiz-container">
+                        <div class="mb-4">
+                            <p id="quiz-question" class="text-xl mb-4"></p>
+                            <div id="quiz-options" class="space-y-3"></div>
+                        </div>
+                        <div class="flex justify-between items-center mt-6">
+                            <p id="quiz-feedback" class="font-semibold"></p>
+                            <button id="quiz-next" onclick="nextQuestion()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-md transition duration-300 hidden">Next</button>
+                        </div>
+                        <div id="quiz-results" class="hidden text-center">
+                            <h3 class="text-2xl font-bold mb-2">Quiz Complete!</h3>
+                            <p class="text-xl mb-4">Your score: <span id="quiz-score"></span></p>
+                            <button onclick="startQuiz()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-md transition duration-300">Try Again</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
 
     <script>
+        // --- GLOBAL STATE ---
+        let expressionAST = null;
+        let currentQuestionIndex = -1;
+        let score = 0;
+        const quizQuestions = [
+            {
+                question: "What is the result of A + A'?",
+                options: ["A", "A'", "1", "0"],
+                answer: "1"
+            },
+            {
+                question: "According to De Morgan's theorem, (A * B)' is equal to:",
+                options: ["A' * B'", "A' + B'", "A + B", "A * B"],
+                answer: "A' + B'"
+            },
+            {
+                question: "Which gate is known as a universal gate?",
+                options: ["AND", "OR", "XOR", "NAND"],
+                answer: "NAND"
+            },
+            {
+                question: "In a 4-variable K-map, a group of 4 adjacent '1's eliminates how many variables?",
+                options: ["1", "2", "3", "4"],
+                answer: "2"
+            },
+            {
+                question: "Product-of-Sums (POS) expressions are derived from which entries in a truth table?",
+                options: ["'1's (minterms)", "'0's (maxterms)", "Don't cares", "Both '1's and '0's"],
+                answer: "'0's (maxterms)"
+            }
+        ];
+
+
         // --- UI LOGIC ---
         function showTab(tabId) {
-            const contents = document.querySelectorAll('.tab-content');
-            contents.forEach(content => content.classList.add('hidden'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
             document.getElementById(tabId).classList.remove('hidden');
 
-            const buttons = document.querySelectorAll('.tab-button');
-            buttons.forEach(button => button.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
             document.querySelector(`button[onclick="showTab('${tabId}')"]`).classList.add('active');
+            
+            if(tabId === 'circuit') {
+                generateCircuitDiagram();
+            } else if (tabId === 'quiz' && currentQuestionIndex === -1) {
+                startQuiz();
+            }
         }
 
         // --- BOOLEAN EXPRESSION PARSER & EVALUATOR ---
         const booleanLogic = {
-            parse: function(expr) {
-                // Normalize expression: AB -> A*B, but not part of a word like 'abs'
-                let normalized = expr.replace(/([A-Z])'?(?=[A-Z(])/g, "$1*");
-                normalized = normalized.replace(/\s+/g, ''); // remove all whitespace
+            parseToAST: function(expr) {
+                let i = 0;
+                expr = expr.replace(/\s+/g, '').replace(/([A-Z])(?=[A-Z(])/g, "$1*");
 
-                const variables = [...new Set(normalized.match(/[A-Z]/g) || [])].sort();
-                
-                // Shunting-yard algorithm for infix to postfix
-                const precedence = { '+': 1, '*': 2, "'": 3 };
-                const outputQueue = [];
-                const operatorStack = [];
-
-                const tokens = normalized.match(/[A-Z]'?|\*|\+|\(|\)/g);
-                if (!tokens) throw new Error("Invalid expression.");
-
-                tokens.forEach(token => {
-                    if (/[A-Z]/.test(token[0])) { // Variable
-                        outputQueue.push(token);
-                    } else if (token === '(') {
-                        operatorStack.push(token);
-                    } else if (token === ')') {
-                        while (operatorStack.length && operatorStack[operatorStack.length - 1] !== '(') {
-                            outputQueue.push(operatorStack.pop());
+                function parsePrimary() {
+                    if (expr[i] >= 'A' && expr[i] <= 'Z') {
+                        const node = { type: 'VAR', name: expr[i] };
+                        i++;
+                        if (expr[i] === "'") {
+                            i++;
+                            return { type: 'NOT', operand: node };
                         }
-                        if (operatorStack.length === 0) throw new Error("Mismatched parentheses.");
-                        operatorStack.pop(); // Pop '('
-                        // Check for negation after parenthesis
-                        if (operatorStack.length > 0 && operatorStack[operatorStack.length - 1] === "'") {
-                            outputQueue.push(operatorStack.pop());
-                        }
-                    } else { // Operator
-                        // Handle negation of parenthesis
-                        if (token.endsWith("'")) {
-                            if (outputQueue[outputQueue.length - 1] === ')') {
-                                 // This is complex, simplified handling for now
-                            }
-                        }
-
-                        while (
-                            operatorStack.length &&
-                            operatorStack[operatorStack.length - 1] !== '(' &&
-                            precedence[operatorStack[operatorStack.length - 1]] >= precedence[token]
-                        ) {
-                            outputQueue.push(operatorStack.pop());
-                        }
-                        operatorStack.push(token);
+                        return node;
                     }
-                });
-
-                while (operatorStack.length) {
-                    const op = operatorStack.pop();
-                    if (op === '(') throw new Error("Mismatched parentheses.");
-                    outputQueue.push(op);
+                    if (expr[i] === '(') {
+                        i++;
+                        const node = parseOr();
+                        if (expr[i] !== ')') throw new Error("Mismatched parentheses");
+                        i++;
+                         if (expr[i] === "'") {
+                            i++;
+                            return { type: 'NOT', operand: node };
+                        }
+                        return node;
+                    }
+                    throw new Error(`Unexpected token at position ${i}: '${expr[i]}'`);
                 }
                 
-                return { postfix: outputQueue, variables };
-            },
+                function parseNot() {
+                     return parsePrimary();
+                }
 
-            evaluate: function(postfix, values) {
-                const stack = [];
-                postfix.forEach(token => {
-                    if (/[A-Z]/.test(token[0])) {
-                        let val = values[token[0]];
-                        if (token.endsWith("'")) val = 1 - val;
-                        stack.push(val);
-                    } else if (token === "'") {
-                         if (stack.length < 1) throw new Error("Invalid expression for negation.");
-                         stack.push(1 - stack.pop());
-                    } else { // Binary operator
-                        if (stack.length < 2) throw new Error("Invalid expression.");
-                        const b = stack.pop();
-                        const a = stack.pop();
-                        if (token === '+') stack.push(a || b);
-                        if (token === '*') stack.push(a && b);
+                function parseAnd() {
+                    let node = parseNot();
+                    while (expr[i] === '*') {
+                        i++;
+                        node = { type: 'AND', left: node, right: parseNot() };
                     }
-                });
-                if (stack.length !== 1) throw new Error("Evaluation error.");
-                return stack[0];
+                    return node;
+                }
+
+                function parseOr() {
+                    let node = parseAnd();
+                    while (expr[i] === '+') {
+                        i++;
+                        node = { type: 'OR', left: node, right: parseAnd() };
+                    }
+                    return node;
+                }
+                
+                const ast = parseOr();
+                if (i < expr.length) throw new Error(`Invalid expression format. Parsing stopped at index ${i}.`);
+
+                const variables = [...new Set(expr.match(/[A-Z]/g) || [])].sort();
+                return { ast, variables };
+            },
+            
+            evaluateAST: function(ast, values) {
+                switch (ast.type) {
+                    case 'VAR': return values[ast.name];
+                    case 'NOT': return 1 - this.evaluateAST(ast.operand, values);
+                    case 'AND': return this.evaluateAST(ast.left, values) & this.evaluateAST(ast.right, values);
+                    case 'OR':  return this.evaluateAST(ast.left, values) | this.evaluateAST(ast.right, values);
+                    default: throw new Error(`Unknown AST node type: ${ast.type}`);
+                }
             }
         };
 
+
         // --- TOOLKIT LOGIC ---
         function generateTruthTable() {
-            const input = document.getElementById('expressionInput').value;
+            const input = document.getElementById('expressionInput').value.trim().toUpperCase();
+            document.getElementById('expressionInput').value = input;
             const errorDiv = document.getElementById('error-message');
             const truthTableContainer = document.getElementById('truthTableResultContainer');
             const simplificationContainer = document.getElementById('simplificationResultContainer');
+            const stepsContainer = document.getElementById('simplificationStepsContainer');
             
             errorDiv.classList.add('hidden');
             truthTableContainer.classList.add('hidden');
             simplificationContainer.classList.add('hidden');
-
+            stepsContainer.classList.add('hidden');
+            
+            if (!input) {
+                errorDiv.textContent = "Please enter an expression.";
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+            
             try {
-                const { postfix, variables } = booleanLogic.parse(input);
+                const { ast, variables } = booleanLogic.parseToAST(input);
+                expressionAST = ast; 
+                
                 if (variables.length === 0) {
-                    errorDiv.textContent = "Please enter an expression with variables (A, B, C, etc.).";
-                    errorDiv.classList.remove('hidden');
+                    const result = booleanLogic.evaluateAST(ast, {});
+                    let tableHTML = `<table class="w-full text-center"><thead><tr><th class="font-bold text-indigo-400">${input}</th></tr></thead><tbody><tr><td class="font-bold">${result}</td></tr></tbody></table>`;
+                    document.getElementById('truthTableResult').innerHTML = tableHTML;
+                    truthTableContainer.classList.remove('hidden');
                     return;
                 }
+
                 if (variables.length > 5) {
                     errorDiv.textContent = "Truth tables for more than 5 variables are too large to display.";
                     errorDiv.classList.remove('hidden');
@@ -366,7 +444,7 @@
                         values[variables[j]] = val;
                         tableHTML += `<td>${val}</td>`;
                     }
-                    const result = booleanLogic.evaluate(postfix, values);
+                    const result = booleanLogic.evaluateAST(ast, values);
                     tableHTML += `<td class="font-bold">${result}</td>`;
                     tableHTML += '</tr>';
                 }
@@ -376,145 +454,257 @@
                 truthTableContainer.classList.remove('hidden');
 
             } catch (e) {
-                errorDiv.textContent = `Error: ${e.message}`;
+                expressionAST = null;
+                errorDiv.textContent = `Error parsing expression: ${e.message}`;
                 errorDiv.classList.remove('hidden');
             }
         }
 
-        function simplifyExpression() {
-             const input = document.getElementById('expressionInput').value;
+        function simplifyExpression(type) {
+            const input = document.getElementById('expressionInput').value.trim().toUpperCase();
+             document.getElementById('expressionInput').value = input;
             const errorDiv = document.getElementById('error-message');
             const simplificationContainer = document.getElementById('simplificationResultContainer');
+            const stepsContainer = document.getElementById('simplificationStepsContainer');
             const truthTableContainer = document.getElementById('truthTableResultContainer');
 
             errorDiv.classList.add('hidden');
             simplificationContainer.classList.add('hidden');
+            stepsContainer.classList.add('hidden');
             truthTableContainer.classList.add('hidden');
 
+            if (!input) {
+                errorDiv.textContent = "Please enter an expression.";
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
              try {
-                const { postfix, variables } = booleanLogic.parse(input);
-                 if (variables.length === 0 || variables.length > 4) {
+                const { ast, variables } = booleanLogic.parseToAST(input);
+                expressionAST = ast; 
+
+                if (variables.length === 0 || variables.length > 4) {
                     errorDiv.textContent = "Simplification is supported for 1 to 4 variables.";
                     errorDiv.classList.remove('hidden');
                     return;
                 }
                 
-                const minterms = [];
+                const terms = [];
                 const numRows = 1 << variables.length;
+                const targetValue = type === 'SOP' ? 1 : 0;
+
                 for (let i = 0; i < numRows; i++) {
                     const values = {};
                     for (let j = 0; j < variables.length; j++) {
                         values[variables[j]] = (i >> (variables.length - 1 - j)) & 1;
                     }
-                    if (booleanLogic.evaluate(postfix, values) === 1) {
-                        minterms.push(i);
+                    if (booleanLogic.evaluateAST(ast, values) === targetValue) {
+                        terms.push(i);
                     }
                 }
 
-                const simplified = kmapSolver.solve(variables, minterms);
-                document.getElementById('simplifiedExpressionResult').textContent = simplified || "0";
+                const simplificationDetails = kmapSolver.solve(variables, terms, type);
+                
+                document.getElementById('simplifiedExpressionResult').textContent = simplificationDetails.expression;
+                document.getElementById('simp-type').textContent = type;
+                
+                displaySimplificationSteps(type, variables, terms, simplificationDetails);
+
                 simplificationContainer.classList.remove('hidden');
+                stepsContainer.classList.remove('hidden');
+
 
             } catch (e) {
+                expressionAST = null;
                 errorDiv.textContent = `Error: ${e.message}`;
                 errorDiv.classList.remove('hidden');
             }
+        }
+
+        function displaySimplificationSteps(type, variables, initialTerms, details) {
+            const stepsDiv = document.getElementById('simplificationSteps');
+            let html = '';
+            const termType = type === 'SOP' ? 'Minterms' : 'Maxterms';
+
+            html += `<div><p class="step-title">1. Initial ${termType} from Truth Table:</p><p>{${initialTerms.join(', ')}}</p></div>`;
+
+            const primeImplicantStrings = details.primeImplicants.map(imp => {
+                const termStr = kmapSolver.implicantToString(imp, variables, type);
+                return `${termStr || (type === 'SOP' ? '1' : '0')} (covers {${imp.minterms.join(', ')}})`;
+            });
+            html += `<div><p class="step-title">2. Find Prime Implicants (Group Terms):</p><p>${primeImplicantStrings.join('; ')}</p></div>`;
+            
+            if (details.essentialImplicants.length > 0) {
+                const essentialStrings = details.essentialImplicants.map(imp => kmapSolver.implicantToString(imp, variables, type) || (type === 'SOP' ? '1' : '0'));
+                html += `<div><p class="step-title">3. Identify Essential Prime Implicants:</p><p>${essentialStrings.join(', ')}</p></div>`;
+            } else {
+                 html += `<div><p class="step-title">3. Identify Essential Prime Implicants:</p><p>None</p></div>`;
+            }
+            
+            const finalCoverStrings = details.finalCover.map(imp => kmapSolver.implicantToString(imp, variables, type) || (type === 'SOP' ? '1' : '0'));
+            const joiner = type === 'SOP' ? ' + ' : ' * ';
+            const finalExpressionString = (type === 'SOP' && finalCoverStrings.length > 0) ? finalCoverStrings.join(joiner) : (type === 'POS' && finalCoverStrings.length > 0) ? finalCoverStrings.map(t => `(${t})`).join(joiner) : (type === 'SOP' ? '0' : '1');
+
+            html += `<div><p class="step-title">4. Select Minimum Cover & Build Expression:</p><p>Selected terms: ${finalCoverStrings.join(', ')}</p><p class="mt-1">Final Expression: <strong class="text-green-400">${finalExpressionString}</strong></p></div>`;
+
+            stepsDiv.innerHTML = html;
         }
 
         // --- K-MAP SOLVER LOGIC ---
         const kmapSolver = {
             kmapState: [],
             vars: [],
-
+            
             init(numVars) {
                 this.vars = 'ABCD'.slice(0, numVars);
                 const rows = numVars > 2 ? 4 : 2;
                 const cols = numVars > 1 ? (numVars > 3 ? 4 : 2) : 1;
                 this.kmapState = Array(rows).fill(0).map(() => Array(cols).fill(0));
             },
-
-            getMinterms() {
-                const minterms = [];
-                const numVars = this.vars.length;
-                if (numVars === 0) return [];
-
-                const rowMap = [0, 1, 3, 2];
-                const colMap = [0, 1, 3, 2];
-
-                for (let r = 0; r < this.kmapState.length; r++) {
-                    for (let c = 0; c < this.kmapState[0].length; c++) {
-                        if (this.kmapState[r][c] === 1) {
-                            let minterm = 0;
-                            if (numVars === 1) minterm = r;
-                            else if (numVars === 2) minterm = (rowMap[r] << 1) | colMap[c];
-                            else if (numVars === 3) minterm = (rowMap[r] << 1) | colMap[c];
-                            else if (numVars === 4) minterm = (rowMap[r] << 2) | colMap[c];
-                            minterms.push(minterm);
-                        }
-                    }
-                }
-                return minterms;
-            },
             
-            // This is a complex algorithm, simplified here for demonstration.
-            // A full implementation would involve prime implicant charts.
-            solve(variables, minterms) {
-                if (minterms.length === 0) return '0';
+            solve(variables, terms, type = 'SOP') {
                 const numVars = variables.length;
-                const numMinterms = 1 << numVars;
-                if (minterms.length === numMinterms) return '1';
-
-                const map = Array(numMinterms).fill(0);
-                minterms.forEach(m => map[m] = 1);
                 
-                // A full Quine-McCluskey is too long. Let's use a simpler heuristic for grouping.
-                // This is a placeholder for a proper simplification algorithm.
-                // A real implementation is much more complex.
-                // For now, this just converts minterms to a sum-of-products form.
-                // The interactive K-map does a better visual job.
-                 let terms = minterms.map(m => {
-                    let term = '';
-                    for (let i = 0; i < numVars; i++) {
-                        term += variables[i];
-                        if (!((m >> (numVars - 1 - i)) & 1)) {
-                            term += "'";
-                        }
-                    }
-                    return term;
-                });
-                if(minterms.length > 8 && numVars === 4) { // Basic heuristic for large maps
-                   return "Expression is complex. Use the interactive K-Map for simplification."
-                }
-                return this.simplifyWithLogic(terms.join(' + ')); // A simple text-based simplification
-            },
+                if (terms.length === 0) return { expression: type === 'SOP' ? '0' : '1', primeImplicants: [], essentialImplicants: [], finalCover: [] };
+                if (terms.length === (1 << numVars)) return { expression: type === 'SOP' ? '1' : '0', primeImplicants: [{minterms: terms}], essentialImplicants: [], finalCover: [] };
 
-            // Very basic text-based simplification
-            simplifyWithLogic(expr) {
-                // Not a true logic simplification, but helps reduce obvious redundancy.
-                let terms = expr.split(' + ').map(t => t.split('').sort().join(''));
-                terms = [...new Set(terms)];
-                return terms.join(' + ');
+                const primeImplicants = this.findPrimeImplicants(terms, numVars);
+                const {essentialImplicants, remainingMinterms} = this.getEssentialImplicants(primeImplicants, terms);
+                const finalCover = this.coverRemainingTerms(primeImplicants, essentialImplicants, remainingMinterms);
+
+                const simplifiedTerms = finalCover.map(imp => this.implicantToString(imp, variables, type));
+                let expression;
+                if (type === 'SOP') {
+                    expression = simplifiedTerms.join(' + ') || '0';
+                } else {
+                    expression = simplifiedTerms.map(t => `(${t})`).join(' * ') || '1';
+                }
+                
+                return { expression, primeImplicants, essentialImplicants, finalCover };
             },
             
-            getSimplifiedTermForGroup(group, numVars, variables) {
-                let term = '';
-                const baseMinterm = group[0];
-                let commonBits = (1 << numVars) - 1;
-                let changingBits = 0;
+            findPrimeImplicants(minterms, numVars) {
+                let groups = Array(numVars + 1).fill(0).map(() => []);
+                minterms.forEach(m => {
+                    const ones = m.toString(2).split('1').length - 1;
+                    groups[ones].push({ minterms: [m], dashes: 0, used: false });
+                });
 
-                for (let i = 1; i < group.length; i++) {
-                    changingBits |= baseMinterm ^ group[i];
+                let allImplicants = [];
+                let currentGroups = groups;
+
+                while (true) {
+                    let nextGroups = Array(numVars).fill(0).map(() => []);
+                    let changed = false;
+                    for (let i = 0; i < numVars; i++) {
+                        for (const g1 of currentGroups[i]) {
+                            for (const g2 of currentGroups[i+1]) {
+                                const diff = g1.minterms[0] ^ g2.minterms[0];
+                                if ((diff & (diff - 1)) === 0 && g1.dashes === g2.dashes && (g1.dashes & diff) === 0) {
+                                    const newMinterms = [...g1.minterms, ...g2.minterms].sort((a,b)=>a-b);
+                                    const newDashes = g1.dashes | diff;
+                                    const newImplicant = { minterms: newMinterms, dashes: newDashes, used: false };
+                                    
+                                    if (!nextGroups[i].some(g => g.dashes === newDashes && g.minterms[0] === newImplicant.minterms[0])) {
+                                        nextGroups[i].push(newImplicant);
+                                    }
+                                    g1.used = true; g2.used = true; changed = true;
+                                }
+                            }
+                        }
+                    }
+                    
+                    for (const group of currentGroups) {
+                        for (const imp of group) {
+                            if (!imp.used) allImplicants.push(imp);
+                        }
+                    }
+                    if (!changed) break;
+                    currentGroups = nextGroups;
                 }
-                commonBits &= ~changingBits;
+                return allImplicants;
+            },
+
+            getEssentialImplicants(implicants, minterms) {
+                const essential = [];
+                const mintermCoverage = {};
+                minterms.forEach(m => mintermCoverage[m] = []);
+                
+                implicants.forEach((imp) => {
+                    imp.minterms.forEach(m => {
+                        if(mintermCoverage[m] !== undefined) mintermCoverage[m].push(imp);
+                    });
+                });
+                
+                const coveredMinterms = new Set();
+
+                Object.entries(mintermCoverage).forEach(([minterm, covers]) => {
+                    if (covers.length === 1) {
+                        const essentialImp = covers[0];
+                        if (!essential.includes(essentialImp)) {
+                            essential.push(essentialImp);
+                            essentialImp.minterms.forEach(m => coveredMinterms.add(m));
+                        }
+                    }
+                });
+
+                const remainingMinterms = minterms.filter(m => !coveredMinterms.has(parseInt(m)));
+                return {essentialImplicants: essential, remainingMinterms};
+            },
+            
+            coverRemainingTerms(allImplicants, essentialImplicants, remainingMinterms) {
+                 if (remainingMinterms.length === 0) return essentialImplicants;
+                 
+                 const nonEssential = allImplicants.filter(imp => !essentialImplicants.includes(imp));
+                 let finalCover = [...essentialImplicants];
+
+                 while(remainingMinterms.length > 0) {
+                     let bestImplicant = null;
+                     let maxCovered = -1;
+
+                     for (const imp of nonEssential) {
+                         const newCover = imp.minterms.filter(m => remainingMinterms.includes(m)).length;
+                         if (newCover > maxCovered) {
+                             maxCovered = newCover;
+                             bestImplicant = imp;
+                         } else if (newCover === maxCovered && bestImplicant && imp.minterms.length > bestImplicant.minterms.length) {
+                             bestImplicant = imp;
+                         }
+                     }
+                     if (bestImplicant) {
+                        finalCover.push(bestImplicant);
+                        const index = nonEssential.indexOf(bestImplicant);
+                        if (index > -1) nonEssential.splice(index, 1);
+                        
+                        bestImplicant.minterms.forEach(m => {
+                            const remIndex = remainingMinterms.indexOf(m);
+                            if (remIndex > -1) remainingMinterms.splice(remIndex, 1);
+                        });
+                     } else {
+                         break;
+                     }
+                 }
+                 return finalCover;
+            },
+
+            implicantToString(implicant, variables, type) {
+                let term = [];
+                const numVars = variables.length;
+                const baseMinterm = implicant.minterms[0];
+                const dashes = implicant.dashes;
 
                 for (let i = 0; i < numVars; i++) {
-                    if ((changingBits >> (numVars - 1 - i)) & 1) continue;
-                    term += variables[i];
-                    if (!((baseMinterm >> (numVars - 1 - i)) & 1)) {
-                        term += "'";
+                    if (!((dashes >> (numVars - 1 - i)) & 1)) {
+                        let literal = variables[i];
+                        const bit = (baseMinterm >> (numVars - 1 - i)) & 1;
+                        if ((type === 'SOP' && bit === 0) || (type === 'POS' && bit === 1)) {
+                            literal += "'";
+                        }
+                        term.push(literal);
                     }
                 }
-                return term;
+                const joiner = type === 'SOP' ? '' : ' + ';
+                return term.join(joiner);
             }
         };
 
@@ -528,19 +718,17 @@
             
             let html = `<div class="inline-block relative">`;
 
-            // Top headers
             if (cols > 1) {
                 const topVars = numVars > 2 ? 'CD' : 'B';
                 const colLabels = numVars > 3 ? ['00', '01', '11', '10'] : ['0', '1'];
-                html += `<div class="kmap-grid" style="grid-template-columns: 40px repeat(${cols}, 1fr);">`;
+                html += `<div class="kmap-grid" style="grid-template-columns: 40px repeat(${cols}, minmax(40px, 1fr));">`;
                 html += `<div class="kmap-header"></div><div class="kmap-header text-center col-span-${cols}">${topVars}</div>`;
                 html += `<div class="kmap-header"></div>`;
                 colLabels.forEach(l => html += `<div class="kmap-header">${l}</div>`);
             } else {
-                 html += `<div class="kmap-grid" style="grid-template-columns: 40px 1fr;">`;
+                 html += `<div class="kmap-grid" style="grid-template-columns: 40px minmax(40px, 1fr);">`;
             }
 
-            // Side headers & cells
             const sideVars = numVars > 2 ? 'AB' : 'A';
             const rowLabels = rows === 4 ? ['00', '01', '11', '10'] : ['0', '1'];
             
@@ -563,17 +751,335 @@
             const newVal = 1 - currentVal;
             kmapSolver.kmapState[r][c] = newVal;
             element.textContent = newVal;
-            element.classList.toggle('selected', newVal === 1);
             solveInteractiveKMap();
         }
         
-        // This is a placeholder for a full K-Map solver. A full implementation
-        // with grouping logic is very extensive for a single file.
         function solveInteractiveKMap() {
-             const minterms = kmapSolver.getMinterms();
-             const simplified = kmapSolver.solve(kmapSolver.vars, minterms);
-             document.getElementById('kmapSimplifiedExpression').textContent = simplified;
+             const mode = document.querySelector('input[name="kmap-mode"]:checked').value;
+             document.getElementById('kmap-simp-type').textContent = mode;
+             const targetValue = mode === 'SOP' ? 1 : 0;
+             
+             document.querySelectorAll('.kmap-cell').forEach(cell => {
+                 const r = parseInt(cell.dataset.r);
+                 const c = parseInt(cell.dataset.c);
+                 cell.classList.remove('one', 'zero');
+                 if(kmapSolver.kmapState[r][c] === 1) cell.classList.add('one');
+                 else cell.classList.add('zero');
+             });
+
+             const numVars = kmapSolver.vars.length;
+             const grayMap = [0, 1, 3, 2];
+             const terms = [];
+
+             for(let r=0; r < kmapSolver.kmapState.length; r++) {
+                 for(let c=0; c < kmapSolver.kmapState[0].length; c++) {
+                     if (kmapSolver.kmapState[r][c] === targetValue) {
+                         let mintermIndex = 0;
+                         if (numVars === 1) mintermIndex = r;
+                         else if (numVars === 2) mintermIndex = (grayMap[r] << 1) | grayMap[c];
+                         else if (numVars === 3) mintermIndex = grayMap[r] * 2 + grayMap[c];
+                         else if (numVars === 4) mintermIndex = (grayMap[r] << 2) | grayMap[c];
+                         terms.push(mintermIndex);
+                     }
+                 }
+             }
+
+             const simplificationDetails = kmapSolver.solve(kmapSolver.vars, terms, mode);
+             
+             document.getElementById('kmapSimplifiedExpression').textContent = simplificationDetails.expression;
+             
+             const stepsEl = document.getElementById('kmap-steps');
+             stepsEl.innerHTML = '';
+             if (simplificationDetails.finalCover.length > 0) {
+                 simplificationDetails.finalCover.forEach(imp => {
+                     const termStr = kmapSolver.implicantToString(imp, kmapSolver.vars, mode);
+                     const mintermStr = imp.minterms.join(', ');
+                     const termType = mode === 'SOP' ? 'Minterms' : 'Maxterms';
+                     stepsEl.innerHTML += `<div>Group for term <strong class="text-indigo-400">${termStr}</strong> covers ${termType}: {${mintermStr}}</div>`;
+                 });
+             } else {
+                 stepsEl.textContent = 'No groups found.';
+             }
         }
+
+        // --- CIRCUIT DIAGRAM LOGIC ---
+        const circuitConverter = {
+            toNandOnly: function(node) {
+                if (!node) return null;
+                switch (node.type) {
+                    case 'VAR': return node;
+                    case 'NOT':
+                        const op = this.toNandOnly(node.operand);
+                        return { type: 'NAND', left: op, right: op };
+                    case 'AND':
+                        const andLeft = this.toNandOnly(node.left);
+                        const andRight = this.toNandOnly(node.right);
+                        const nand1 = { type: 'NAND', left: andLeft, right: andRight };
+                        return { type: 'NAND', left: nand1, right: nand1 };
+                    case 'OR':
+                        const orLeft = this.toNandOnly(node.left);
+                        const orRight = this.toNandOnly(node.right);
+                        const nandLeft = { type: 'NAND', left: orLeft, right: orLeft }; // NOT
+                        const nandRight = { type: 'NAND', left: orRight, right: orRight }; // NOT
+                        return { type: 'NAND', left: nandLeft, right: nandRight };
+                    default: return node;
+                }
+            },
+            toNorOnly: function(node) {
+                 if (!node) return null;
+                switch (node.type) {
+                    case 'VAR': return node;
+                    case 'NOT':
+                        const op = this.toNorOnly(node.operand);
+                        return { type: 'NOR', left: op, right: op };
+                    case 'OR':
+                        const orLeft = this.toNorOnly(node.left);
+                        const orRight = this.toNorOnly(node.right);
+                        const nor1 = { type: 'NOR', left: orLeft, right: orRight };
+                        return { type: 'NOR', left: nor1, right: nor1 };
+                    case 'AND':
+                        const andLeft = this.toNorOnly(node.left);
+                        const andRight = this.toNorOnly(node.right);
+                        const norLeft = { type: 'NOR', left: andLeft, right: andLeft }; // NOT
+                        const norRight = { type: 'NOR', left: andRight, right: andRight }; // NOT
+                        return { type: 'NOR', left: norLeft, right: norRight };
+                    default: return node;
+                }
+            }
+        };
+
+        function generateCircuitDiagram() {
+            const svg = document.getElementById('circuit-svg');
+            const errorDiv = document.getElementById('circuit-error');
+            svg.innerHTML = ''; 
+            
+            if (!expressionAST) {
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+            errorDiv.classList.add('hidden');
+
+            const circuitType = document.querySelector('input[name="circuit-type"]:checked').value;
+            let targetAST = expressionAST;
+            if (circuitType === 'nand') {
+                targetAST = circuitConverter.toNandOnly(expressionAST);
+            } else if (circuitType === 'nor') {
+                targetAST = circuitConverter.toNorOnly(expressionAST);
+            }
+            
+            const variables = [...new Set(document.getElementById('expressionInput').value.match(/[A-Z]/g) || [])].sort();
+            const layout = {
+                gateWidth: 60, gateHeight: 40,
+                hSpacing: 80, vSpacing: 60,
+                startX: 50, startY: 50,
+            };
+            
+            const inputCoords = {};
+            const availableY = {};
+            
+            variables.forEach((v, i) => {
+                const y = layout.startY + i * layout.vSpacing;
+                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute("x", layout.startX - 10);
+                text.setAttribute("y", y + 5);
+                text.setAttribute("class", "input-label");
+                text.setAttribute("text-anchor", "end");
+                text.textContent = v;
+                svg.appendChild(text);
+                inputCoords[v] = { x: layout.startX, y: y };
+                availableY[y] = true;
+            });
+
+            function getNextAvailableY(preferredY) {
+                let y = preferredY;
+                while(availableY[y]) {
+                    y += layout.vSpacing / 4;
+                }
+                return y;
+            }
+
+            const {x: finalX, y: finalY, width, height} = drawNode(targetAST, layout.startX + 600, layout.startY + (variables.length-1) * layout.vSpacing / 2);
+
+            const finalWire = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            finalWire.setAttribute("d", `M ${finalX} ${finalY} H ${finalX + layout.hSpacing / 2}`);
+            finalWire.setAttribute("class", "wire");
+            svg.appendChild(finalWire);
+
+            const outputLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            outputLabel.setAttribute("x", finalX + layout.hSpacing / 2 + 10);
+            outputLabel.setAttribute("y", finalY + 5);
+            outputLabel.setAttribute("class", "input-label");
+            outputLabel.textContent = "Out";
+            svg.appendChild(outputLabel);
+            
+            svg.setAttribute("width", width);
+            svg.setAttribute("height", height);
+
+            function drawNode(node, x, y) {
+                let maxWidth = x, maxHeight = y;
+                let result;
+                
+                switch (node.type) {
+                    case 'VAR':
+                        const wire = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                        wire.setAttribute("d", `M ${inputCoords[node.name].x} ${inputCoords[node.name].y} L ${x} ${inputCoords[node.name].y}`);
+                        wire.setAttribute("class", "wire");
+                        svg.insertBefore(wire, svg.firstChild);
+                        result = { x: inputCoords[node.name].x, y: inputCoords[node.name].y, width: x, height: y };
+                        break;
+                    case 'NOT':
+                        const opPos = drawNode(node.operand, x - layout.hSpacing, y);
+                        result = drawNotGate(opPos.x, opPos.y, x, y);
+                        maxWidth = Math.max(maxWidth, opPos.width);
+                        maxHeight = Math.max(maxHeight, opPos.height);
+                        break;
+                    case 'AND': case 'OR': case 'NAND': case 'NOR':
+                        let y1 = y - layout.vSpacing/2, y2 = y + layout.vSpacing/2;
+                        
+                        const leftPos = drawNode(node.left, x - layout.hSpacing, y1);
+                        // Make sure right branch doesn't overlap
+                        if (Math.abs(leftPos.y - y2) < layout.gateHeight) {
+                            y2 = leftPos.y + layout.vSpacing;
+                        }
+                        const rightPos = drawNode(node.right, x - layout.hSpacing, y2);
+                        
+                        result = drawBinaryGate(node.type, leftPos, rightPos, x, (leftPos.y + rightPos.y)/2);
+                        maxWidth = Math.max(maxWidth, leftPos.width, rightPos.width);
+                        maxHeight = Math.max(maxHeight, leftPos.height, rightPos.height);
+                        break;
+                }
+                
+                return {x: result.x, y: result.y, width: maxWidth + layout.hSpacing, height: maxHeight + layout.vSpacing};
+            }
+            
+            function drawNotGate(startX, startY, endX, endY) {
+                // Simplified NOT gate to a NAND/NOR with tied inputs for universal gate implementation
+                return drawBinaryGate('NOT', {x: startX, y: startY}, {x: startX, y: startY}, endX - layout.hSpacing / 2, startY)
+            }
+
+            function drawBinaryGate(type, pos1, pos2, x, y) {
+                 const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                
+                 const wire1 = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                 wire1.setAttribute("d", `M ${pos1.x} ${pos1.y} C ${pos1.x + 40} ${pos1.y}, ${x - layout.gateWidth / 2 - 40} ${y - layout.gateHeight / 4}, ${x - layout.gateWidth / 2} ${y - layout.gateHeight / 4}`);
+                 wire1.setAttribute("class", "wire");
+                 g.appendChild(wire1);
+
+                 const wire2 = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                 wire2.setAttribute("d", `M ${pos2.x} ${pos2.y} C ${pos2.x + 40} ${pos2.y}, ${x - layout.gateWidth / 2 - 40} ${y + layout.gateHeight / 4}, ${x - layout.gateWidth / 2} ${y + layout.gateHeight / 4}`);
+                 wire2.setAttribute("class", "wire");
+                 g.appendChild(wire2);
+                
+                let textContent = type;
+
+                if (type === 'AND' || type === 'NAND') {
+                    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    path.setAttribute("d", `M ${x - layout.gateWidth/2} ${y - layout.gateHeight/2} H ${x} A ${layout.gateWidth/2} ${layout.gateHeight/2} 0 0 1 ${x} ${y + layout.gateHeight/2} H ${x - layout.gateWidth/2} Z`);
+                    path.setAttribute("class", "gate-body");
+                    g.appendChild(path);
+                    textContent = type === 'NAND' ? 'ND' : 'AND';
+                } else if (type === 'OR' || type === 'NOR') {
+                    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    path.setAttribute("d", `M ${x-layout.gateWidth/2} ${y-layout.gateHeight/2} Q ${x} ${y}, ${x-layout.gateWidth/2} ${y+layout.gateHeight/2} Q ${x+15} ${y}, ${x+layout.gateWidth/2} ${y} Q ${x+15} ${y}, ${x-layout.gateWidth/2} ${y-layout.gateHeight/2}`);
+                    path.setAttribute("class", "gate-body");
+                    g.appendChild(path);
+                     textContent = type === 'NOR' ? 'NOR' : 'OR';
+                } else { //NOT
+                    const triangle = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+                    triangle.setAttribute("points", `${x-layout.gateWidth/2},${y-15} ${x-layout.gateWidth/2},${y+15} ${x-layout.gateWidth/2+20},${y}`);
+                    triangle.setAttribute("class", "gate-body");
+                    g.appendChild(triangle);
+                }
+                
+                 const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                 text.setAttribute("x", type === 'NOT' ? x - layout.gateWidth/2 + 8 : x);
+                 text.setAttribute("y", y + 5);
+                 text.setAttribute("class", "gate-text");
+                 text.textContent = textContent;
+                 g.appendChild(text);
+
+                 let outX = x + layout.gateWidth/2;
+                 if (type === 'NOT') outX = x-layout.gateWidth/2+20;
+
+                 if (type === 'NAND' || type === 'NOR' || type === 'NOT') {
+                    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                    circle.setAttribute("cx", outX + 5);
+                    circle.setAttribute("cy", y);
+                    circle.setAttribute("r", 5);
+                    circle.setAttribute("class", "gate-body");
+                    g.appendChild(circle);
+                    outX += 10;
+                 }
+
+                 svg.insertBefore(g, svg.firstChild);
+                 return {x: outX, y: y};
+            }
+        }
+        
+        // --- QUIZ LOGIC ---
+        function startQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            document.getElementById('quiz-results').classList.add('hidden');
+            document.getElementById('quiz-next').classList.add('hidden');
+            document.getElementById('quiz-feedback').textContent = '';
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            if (currentQuestionIndex >= quizQuestions.length) {
+                showResults();
+                return;
+            }
+            const q = quizQuestions[currentQuestionIndex];
+            document.getElementById('quiz-question').textContent = q.question;
+            const optionsDiv = document.getElementById('quiz-options');
+            optionsDiv.innerHTML = '';
+            q.options.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.className = 'quiz-option w-full text-left p-3 rounded-lg font-semibold';
+                button.onclick = () => selectAnswer(button, option, q.answer);
+                optionsDiv.appendChild(button);
+            });
+        }
+        
+        function selectAnswer(button, selected, correct) {
+            document.querySelectorAll('.quiz-option').forEach(b => b.disabled = true);
+            const feedback = document.getElementById('quiz-feedback');
+            if (selected === correct) {
+                button.classList.add('correct');
+                feedback.textContent = 'Correct!';
+                feedback.className = 'font-semibold text-green-400';
+                score++;
+            } else {
+                button.classList.add('incorrect');
+                feedback.textContent = `Incorrect. The right answer is ${correct}.`;
+                feedback.className = 'font-semibold text-red-400';
+                document.querySelectorAll('.quiz-option').forEach(b => {
+                    if (b.textContent === correct) b.classList.add('correct');
+                });
+            }
+            document.getElementById('quiz-next').classList.remove('hidden');
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            document.getElementById('quiz-next').classList.add('hidden');
+            document.getElementById('quiz-feedback').textContent = '';
+            loadQuestion();
+        }
+
+        function showResults() {
+             document.getElementById('quiz-question').textContent = '';
+             document.getElementById('quiz-options').innerHTML = '';
+             document.getElementById('quiz-next').classList.add('hidden');
+             document.getElementById('quiz-feedback').textContent = '';
+             document.getElementById('quiz-score').textContent = `${score} / ${quizQuestions.length}`;
+             document.getElementById('quiz-results').classList.remove('hidden');
+             currentQuestionIndex = -1; // Reset for next time
+        }
+        
 
         // --- INITIALIZATION ---
         window.onload = () => {
@@ -584,3 +1090,4 @@
     </script>
 </body>
 </html>
+
